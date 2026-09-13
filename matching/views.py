@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from dogs.models import Dog
 
 from .models import Swipe
-from .services import register_swipe
+from .services import compatibility_score, register_swipe
 
 
 @login_required
@@ -21,6 +21,8 @@ def feed(request):
         _, match = register_swipe(my_dog, to_dog, liked)
 
     already_swiped_ids = Swipe.objects.filter(from_dog=my_dog).values_list('to_dog_id', flat=True)
-    next_dog = Dog.objects.exclude(owner=my_dog.owner).exclude(id__in=already_swiped_ids).first()
+    candidates = Dog.objects.exclude(owner=my_dog.owner).exclude(id__in=already_swiped_ids)
+
+    next_dog = max(candidates, key=lambda dog: compatibility_score(my_dog, dog), default=None)
 
     return render(request, 'matching/feed.html', {'dog': next_dog, 'match': match})

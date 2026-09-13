@@ -6,18 +6,18 @@ from accounts.models import Owner
 from dogs.models import Dog
 
 from .models import Match, Swipe
-from .services import register_swipe
+from .services import compatibility_score, register_swipe
 
 
-def create_dog(owner, name):
-    return Dog.objects.create(
-        owner=owner,
-        name=name,
-        size=Dog.Size.MEDIO,
-        energy_level=Dog.EnergyLevel.MEDIA,
-        sociability=Dog.Sociability.ALTA,
-        age=3,
-    )
+def create_dog(owner, name, **kwargs):
+    fields = {
+        'size': Dog.Size.MEDIO,
+        'energy_level': Dog.EnergyLevel.MEDIA,
+        'sociability': Dog.Sociability.ALTA,
+        'age': 3,
+    }
+    fields.update(kwargs)
+    return Dog.objects.create(owner=owner, name=name, **fields)
 
 
 class RegisterSwipeTest(TestCase):
@@ -50,6 +50,40 @@ class RegisterSwipeTest(TestCase):
         self.assertEqual(Swipe.objects.count(), 1)
 
 
+class CompatibilityScoreTest(TestCase):
+    def setUp(self):
+        self.owner_a = Owner.objects.create(
+            user=User.objects.create_user(username='dono_a', password='senha123'),
+            city='São Luís',
+        )
+        self.owner_b = Owner.objects.create(
+            user=User.objects.create_user(username='dono_b', password='senha123'),
+            city='São Luís',
+        )
+
+    def test_identical_dogs_score_maximum(self):
+        dog_a = create_dog(self.owner_a, 'Rex')
+        dog_b = create_dog(self.owner_b, 'Bela')
+        self.assertEqual(compatibility_score(dog_a, dog_b), 100)
+
+    def test_very_different_dogs_score_zero(self):
+        dog_a = create_dog(
+            self.owner_a, 'Rex',
+            size=Dog.Size.PEQUENO,
+            energy_level=Dog.EnergyLevel.BAIXA,
+            sociability=Dog.Sociability.BAIXA,
+            age=1,
+        )
+        dog_b = create_dog(
+            self.owner_b, 'Bela',
+            size=Dog.Size.GRANDE,
+            energy_level=Dog.EnergyLevel.ALTA,
+            sociability=Dog.Sociability.ALTA,
+            age=10,
+        )
+        self.assertEqual(compatibility_score(dog_a, dog_b), 0)
+
+
 class FeedViewTest(TestCase):
     def setUp(self):
         owner_a = Owner.objects.create(
@@ -61,7 +95,7 @@ class FeedViewTest(TestCase):
             city='São Luís',
         )
         self.dog_a = create_dog(owner_a, 'Rex')
-        self.dog_b = create_dog(owner_b, 'Bela')
+        self.dog_b = create_dog(owner_b, 'Bela', energy_level=Dog.EnergyLevel.ALTA)
 
     def test_requires_login(self):
         response = self.client.get(reverse('matching:feed'))
@@ -78,3 +112,15 @@ class FeedViewTest(TestCase):
         self.assertTrue(
             Swipe.objects.filter(from_dog=self.dog_a, to_dog=self.dog_b, liked=True).exists()
         )
+
+    def test_feed_shows_most_compatible_dog_first(self):
+        owner_c = Owner.objects.create(
+            user=User.objects.create_user(username='dono_c', password='senha123'),
+            city='São Luís',
+        )
+        dog_c = create_dog(owner_c, 'Totó')
+
+        self.client.login(username='dono_a', password='senha123')
+        response = self.client.get(reverse('matching:feed'))
+
+        self.assertEqual(response.context['dog'], dog_c)
