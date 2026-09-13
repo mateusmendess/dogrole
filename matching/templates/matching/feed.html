@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {% if match %}
+    <p>Deu match com {{ match.dog_two.name }}! 🎉</p>
+  {% endif %}
+
+  {% if dog %}
+    <div>
+      {% if dog.photo %}
+        <img src="{{ dog.photo.url }}" alt="{{ dog.name }}">
+      {% endif %}
+      <h2>{{ dog.name }}</h2>
+      <p>{{ dog.breed }} · {{ dog.age }} anos</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="dog_id" value="{{ dog.id }}">
+      <button type="submit" name="liked" value="false">Passar</button>
+      <button type="submit" name="liked" value="true">Curtir</button>
+    </form>
+  {% else %}
+    <p>Não há mais cães por perto no momento.</p>
+  {% endif %}
+{% endblock %}
