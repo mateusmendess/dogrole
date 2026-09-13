@@ -31,3 +31,31 @@ class SignupViewTest(TestCase):
         user = User.objects.get(username='novodono')
         self.assertTrue(Owner.objects.filter(user=user).exists())
         self.assertIn('_auth_user_id', self.client.session)
+
+
+class LoginLogoutTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='mateus', password='senha123')
+        Owner.objects.create(user=self.user, city='São Luís')
+
+    def test_login_with_correct_credentials(self):
+        response = self.client.post(reverse('accounts:login'), {
+            'username': 'mateus',
+            'password': 'senha123',
+        })
+        self.assertRedirects(response, reverse('accounts:home'))
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_login_with_wrong_password_fails(self):
+        response = self.client.post(reverse('accounts:login'), {
+            'username': 'mateus',
+            'password': 'senhaerrada',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_logout_ends_session(self):
+        self.client.login(username='mateus', password='senha123')
+        response = self.client.get(reverse('accounts:logout'))
+        self.assertRedirects(response, reverse('accounts:login'))
+        self.assertNotIn('_auth_user_id', self.client.session)
