@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Meus Matches</h2>
+
+  {% if matches %}
+    <ul>
+      {% for item in matches %}
+        <li>
+          {% if item.other_dog.photo %}
+            <img src="{{ item.other_dog.photo.url }}" alt="{{ item.other_dog.name }}">
+          {% endif %}
+          {{ item.other_dog.name }} — {{ item.other_dog.breed }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Você ainda não tem nenhum match.</p>
+  {% endif %}
+{% endblock %}
