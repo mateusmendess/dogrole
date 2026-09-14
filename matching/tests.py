@@ -124,3 +124,35 @@ class FeedViewTest(TestCase):
         response = self.client.get(reverse('matching:feed'))
 
         self.assertEqual(response.context['dog'], dog_c)
+
+
+class MatchListViewTest(TestCase):
+    def setUp(self):
+        owner_a = Owner.objects.create(
+            user=User.objects.create_user(username='dono_a', password='senha123'),
+            city='São Luís',
+        )
+        owner_b = Owner.objects.create(
+            user=User.objects.create_user(username='dono_b', password='senha123'),
+            city='São Luís',
+        )
+        self.dog_a = create_dog(owner_a, 'Rex')
+        self.dog_b = create_dog(owner_b, 'Bela')
+
+    def test_requires_login(self):
+        response = self.client.get(reverse('matching:match_list'))
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_lists_match_with_other_dog(self):
+        Match.objects.create(dog_one=self.dog_a, dog_two=self.dog_b)
+
+        self.client.login(username='dono_a', password='senha123')
+        response = self.client.get(reverse('matching:match_list'))
+
+        other_dogs = [item['other_dog'] for item in response.context['matches']]
+        self.assertEqual(other_dogs, [self.dog_b])
+
+    def test_no_matches_shows_empty_list(self):
+        self.client.login(username='dono_a', password='senha123')
+        response = self.client.get(reverse('matching:match_list'))
+        self.assertEqual(list(response.context['matches']), [])

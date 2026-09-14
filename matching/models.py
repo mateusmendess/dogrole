@@ -20,3 +20,6 @@ class Match(models.Model):
 
     def __str__(self):
         return f'{self.dog_one.name} + {self.dog_two.name}'
+
+    def other_dog(self, dog):
+        return self.dog_two if self.dog_one_id == dog.id else self.dog_one
