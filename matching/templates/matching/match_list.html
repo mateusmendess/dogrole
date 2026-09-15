@@ -11,6 +11,21 @@
             <img src="{{ item.other_dog.photo.url }}" alt="{{ item.other_dog.name }}">
           {% endif %}
           {{ item.other_dog.name }} — {{ item.other_dog.breed }}
+
+          <a href="{% url 'events:propose' item.match.id %}">Propor encontro</a>
+
+          {% for event in item.events %}
+            <p>
+              {{ event.location }} em {{ event.scheduled_at }} — {{ event.get_status_display }}
+            </p>
+            {% if event.status == 'pendente' and event.proposed_by_id != my_dog.id %}
+              <form method="post" action="{% url 'events:respond' event.id %}">
+                {% csrf_token %}
+                <button type="submit" name="decision" value="confirmar">Confirmar</button>
+                <button type="submit" name="decision" value="recusar">Recusar</button>
+              </form>
+            {% endif %}
+          {% endfor %}
         </li>
       {% endfor %}
     </ul>

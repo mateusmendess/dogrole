@@ -40,8 +40,16 @@ def match_list(request):
     ).select_related('dog_one', 'dog_two')
 
     matches_with_other_dog = [
-        {'match': match, 'other_dog': match.other_dog(my_dog)}
+        {
+            'match': match,
+            'other_dog': match.other_dog(my_dog),
+            'events': match.events.all(),
+        }
         for match in matches
     ]
 
-    return render(request, 'matching/match_list.html', {'matches': matches_with_other_dog})
+    return render(
+        request,
+        'matching/match_list.html',
+        {'matches': matches_with_other_dog, 'my_dog': my_dog},
+    )
