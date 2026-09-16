@@ -5,6 +5,10 @@
     <p>Deu match com {{ match.dog_two.name }}! 🎉</p>
   {% endif %}
 
+  {% if limit_reached %}
+    <p>Você atingiu o limite de curtidas de hoje no plano gratuito. Volte amanhã ou assine o plano pago para curtir sem limites!</p>
+  {% endif %}
+
   {% if dog %}
     <div>
       {% if dog.photo %}
