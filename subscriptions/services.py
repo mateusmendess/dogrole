@@ -1,2 +1,10 @@
-# Lógica de negócio desta app fica aqui (isolada de models.py e views.py).
-# Ainda vazio -- será implementado na Fase 2, junto com a funcionalidade correspondente.
+from .models import Subscription
+
+DAILY_FREE_LIKE_LIMIT = 10
+
+
+def can_like(owner, likes_today):
+    subscription, _ = Subscription.objects.get_or_create(owner=owner)
+    if subscription.is_paid:
+        return True
+    return likes_today < DAILY_FREE_LIKE_LIMIT

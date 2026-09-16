@@ -1,5 +1,8 @@
-from .models import Match, Swipe
+from django.utils import timezone
+
 from dogs.models import Dog
+
+from .models import Match, Swipe
 
 
 def register_swipe(from_dog, to_dog, liked):
@@ -23,6 +26,11 @@ def register_swipe(from_dog, to_dog, liked):
         return swipe, match
 
     return swipe, None
+
+
+def todays_likes_count(dog):
+    today = timezone.localdate()
+    return Swipe.objects.filter(from_dog=dog, liked=True, created_at__date=today).count()
 
 
 SIZE_ORDER = {

@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from accounts.models import Owner
 from dogs.models import Dog
+from subscriptions.services import DAILY_FREE_LIKE_LIMIT
 
 from .models import Match, Swipe
 from .services import compatibility_score, register_swipe
@@ -156,3 +157,46 @@ class MatchListViewTest(TestCase):
         self.client.login(username='dono_a', password='senha123')
         response = self.client.get(reverse('matching:match_list'))
         self.assertEqual(list(response.context['matches']), [])
+
+
+class FeedLikeLimitTest(TestCase):
+    def setUp(self):
+        owner_a = Owner.objects.create(
+            user=User.objects.create_user(username='dono_a', password='senha123'),
+            city='São Luís',
+        )
+        self.dog_a = create_dog(owner_a, 'Rex')
+
+        for i in range(DAILY_FREE_LIKE_LIMIT):
+            owner = Owner.objects.create(
+                user=User.objects.create_user(username=f'dono_{i}', password='senha123'),
+                city='São Luís',
+            )
+            dog = create_dog(owner, f'Cao{i}')
+            Swipe.objects.create(from_dog=self.dog_a, to_dog=dog, liked=True)
+
+        owner_extra = Owner.objects.create(
+            user=User.objects.create_user(username='dono_extra', password='senha123'),
+            city='São Luís',
+        )
+        self.extra_dog = create_dog(owner_extra, 'Totó')
+
+    def test_blocks_like_after_daily_limit(self):
+        self.client.login(username='dono_a', password='senha123')
+        response = self.client.post(
+            reverse('matching:feed'), {'dog_id': self.extra_dog.id, 'liked': 'true'}
+        )
+        self.assertTrue(response.context['limit_reached'])
+        self.assertFalse(
+            Swipe.objects.filter(from_dog=self.dog_a, to_dog=self.extra_dog).exists()
+        )
+
+    def test_dislike_is_not_blocked_by_limit(self):
+        self.client.login(username='dono_a', password='senha123')
+        response = self.client.post(
+            reverse('matching:feed'), {'dog_id': self.extra_dog.id, 'liked': 'false'}
+        )
+        self.assertFalse(response.context['limit_reached'])
+        self.assertTrue(
+            Swipe.objects.filter(from_dog=self.dog_a, to_dog=self.extra_dog, liked=False).exists()
+        )
