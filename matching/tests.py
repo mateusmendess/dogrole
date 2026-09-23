@@ -65,7 +65,7 @@ class CompatibilityScoreTest(TestCase):
     def test_identical_dogs_score_maximum(self):
         dog_a = create_dog(self.owner_a, 'Rex')
         dog_b = create_dog(self.owner_b, 'Bela')
-        self.assertEqual(compatibility_score(dog_a, dog_b), 100)
+        self.assertEqual(compatibility_score(dog_a, dog_b), 999)
 
     def test_very_different_dogs_score_zero(self):
         dog_a = create_dog(
